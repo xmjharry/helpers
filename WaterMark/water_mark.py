@@ -5,6 +5,8 @@
 # coding:utf-8
 
 from PIL import Image, ImageDraw, ImageFont
+import argparse
+import os
 
 
 def add_text_to_image(image, text):
@@ -31,6 +33,18 @@ def add_text_to_image(image, text):
 
 
 if __name__ == '__main__':
-    img = Image.open('timg.jpeg')
-    im_after = add_text_to_image(img, '此证件仅限于微信支付使用')
-    im_after.save('水印.png')
+    parser = argparse.ArgumentParser()
+    parser.add_argument('path', help='图片路径')
+    parser.add_argument('txt', help='水印文字')
+    args = parser.parse_args()
+    _path = args.path
+    _txt = args.txt
+    if _path and _txt:
+        _, image_name = os.path.split(_path)
+        image_name_no_suffix, _ = os.path.splitext(image_name)
+        img = Image.open(_path)
+        im_after = add_text_to_image(img, _txt)
+        im_after.save(f'{image_name_no_suffix}_water_mark.png')
+    else:
+        raise ValueError('必须输入图片路径和水印文字')
+
