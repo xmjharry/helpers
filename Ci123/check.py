@@ -28,6 +28,9 @@ def check():
         session.headers.update({'User-Agent': USER_AGENT})
         session.post(LOGIN_URL, {'email': EMAIL, 'password': PASSWORD})
         session.post(CHECK_URL, {'type': CHECK_IN_TYPE if _type == 'in' else CHECK_OUT_TYPE, 'userId': USERID})
+    with open('check_log.txt', 'a+') as f:
+        f.write(
+            datetime.datetime.today().strftime('%Y-%m-%d %H:%M:%S') + '上班打卡成功\n' if _type == 'in' else '下班打卡成功\n')
 
 
 parser = argparse.ArgumentParser()
@@ -47,6 +50,7 @@ elif _type == 'out':
 else:
     raise ValueError('Type is error')
 run_date = datetime.datetime.fromtimestamp(random.randrange(strat_datetime, end_datetime))
+# run_date = datetime.datetime.now() + datetime.timedelta(seconds=1)
 scheduler = BackgroundScheduler()
 scheduler.add_job(check, 'date', run_date=run_date, args=(), id=f"{run_date.strftime('%Y-%m-%d %H:%M:%S')}-{_type}")
 scheduler.start()
