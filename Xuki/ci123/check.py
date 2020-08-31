@@ -9,6 +9,7 @@ import random
 import time
 from ..ifttt import ifttt
 import requests
+import os
 from apscheduler.schedulers.background import BackgroundScheduler
 
 # BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -35,9 +36,9 @@ def send_request(_type):
         session.post(CHECK_URL, {'type': CHECK_IN_TYPE if _type == 'in' else CHECK_OUT_TYPE, 'userId': USERID})
     ifttt.send('check', {'value2': datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
                          'value1': '今天上班打卡时间：' if _type == 'in' else '今天下班打卡时间：'})
-    # with open('check_log.txt', 'a+') as f:
-    #     f.write(
-    #         datetime.datetime.today().strftime('%Y-%m-%d %H:%M:%S') + '上班打卡成功\n' if type == 'in' else '下班打卡成功\n')
+    with open('log/check_log.txt', 'a+', encoding='utf8') as f:
+        f.write(
+            datetime.datetime.today().strftime('%Y-%m-%d %H:%M:%S') + '上班打卡成功\n' if _type == 'in' else '下班打卡成功\n')
 
 
 def check(_type):

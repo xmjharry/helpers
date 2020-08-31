@@ -3,4 +3,5 @@
 # @File : config.py
 # @Annotation :
 
+# 签到
 CHECK = True
