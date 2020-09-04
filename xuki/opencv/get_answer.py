@@ -9,10 +9,10 @@ import imutils
 import cv2
 
 # 设置参数
-ap = argparse.ArgumentParser()
-ap.add_argument("-i", "--image", required=True,
-                help="path to the input image")
-args = vars(ap.parse_args())
+# ap = argparse.ArgumentParser()
+# ap.add_argument("-i", "--image", required=True,
+#                 help="path to the input image")
+# args = vars(ap.parse_args())
 
 # 正确答案
 ANSWER_KEY = {0: 1, 1: 4, 2: 0, 3: 3, 4: 1}
@@ -81,35 +81,37 @@ def sort_contours(cnts, method="left-to-right"):
 def cv_show(name, img):
     cv2.imshow(name, img)
     cv2.waitKey(0)
-    cv2.destroyAllWindows()
+    # cv2.destroyAllWindows()
 
 
 # 预处理
-image = cv2.imread(args["image"])
+# image = cv2.imread(args["image"])
+image = cv2.imread('example_test.png')
 contours_img = image.copy()
 gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 blurred = cv2.GaussianBlur(gray, (5, 5), 0)
 cv_show('blurred', blurred)
-edged = cv2.Canny(blurred, 75, 200)
+edged = cv2.Canny(blurred, 75, 100)
 cv_show('edged', edged)
 
 # 轮廓检测
 cnts = cv2.findContours(edged.copy(), cv2.RETR_EXTERNAL,
-                        cv2.CHAIN_APPROX_SIMPLE)[1]
+                        cv2.CHAIN_APPROX_SIMPLE)[0]
 cv2.drawContours(contours_img, cnts, -1, (0, 0, 255), 3)
 cv_show('contours_img', contours_img)
 docCnt = None
+
 
 # 确保检测到了
 if len(cnts) > 0:
     # 根据轮廓大小进行排序
     cnts = sorted(cnts, key=cv2.contourArea, reverse=True)
-
     # 遍历每一个轮廓
     for c in cnts:
         # 近似
         peri = cv2.arcLength(c, True)
         approx = cv2.approxPolyDP(c, 0.02 * peri, True)
+
 
         # 准备做透视变换
         if len(approx) == 4:
@@ -117,18 +119,19 @@ if len(cnts) > 0:
             break
 
 # 执行透视变换
-
 warped = four_point_transform(gray, docCnt.reshape(4, 2))
 cv_show('warped', warped)
-# Otsu's 阈值处理
+# Otsu's 阈值处理 自动找到阙值：
 thresh = cv2.threshold(warped, 0, 255,
                        cv2.THRESH_BINARY_INV | cv2.THRESH_OTSU)[1]
 cv_show('thresh', thresh)
 thresh_Contours = thresh.copy()
 # 找到每一个圆圈轮廓
 cnts = cv2.findContours(thresh.copy(), cv2.RETR_EXTERNAL,
-                        cv2.CHAIN_APPROX_SIMPLE)[1]
-cv2.drawContours(thresh_Contours, cnts, -1, (0, 0, 255), 3)
+                        cv2.CHAIN_APPROX_SIMPLE)[0]
+print('cnts len',len(cnts))
+print('cnts',cnts)
+cv2.drawContours(thresh_Contours, cnts, -1, (0, 0, 0), 3)
 cv_show('thresh_Contours', thresh_Contours)
 questionCnts = []
 
@@ -142,6 +145,8 @@ for c in cnts:
     if w >= 20 and h >= 20 and ar >= 0.9 and ar <= 1.1:
         questionCnts.append(c)
 
+print('questionCnts len',len(questionCnts))
+print('questionCnts',questionCnts)
 # 按照从上到下进行排序
 questionCnts = sort_contours(questionCnts,
                              method="top-to-bottom")[0]
