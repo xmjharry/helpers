@@ -10,6 +10,7 @@ import pandas as pd
 import requests
 from lxml import etree
 
+file_name = None
 
 class WanNianRiLi(object):
     """万年日历接口数据抓取
@@ -67,7 +68,7 @@ class WanNianRiLi(object):
         """导出CSV"""
         headers = ['Date', 'Holiday', 'Tag']
         # 如果存入乱码，添加 encoding='utf-8-sig'
-        with open(self.year + 'Holiday.csv', 'w', newline='', encoding='utf8') as f:
+        with open(file_name, 'w', newline='', encoding='utf8') as f:
             f_csv = csv.DictWriter(f, headers)
             f_csv.writeheader()
             f_csv.writerows(data)
@@ -77,6 +78,7 @@ class WanNianRiLi(object):
 def judge(date) -> int:
     date_ = datetime.datetime.strptime(date, '%Y-%m-%d')
     year = date_.year
+    global file_name
     file_name = f'./xuki/wannianli/{year}Holiday.csv'
     if not os.path.exists(file_name):
         WanNianRiLi(str(year))
