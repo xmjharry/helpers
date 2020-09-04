@@ -74,7 +74,7 @@ class WanNianRiLi(object):
 
 
 # 1-工作日 0-休息日
-def judge(date=datetime.datetime.today().strftime('%Y-%m-%d')):
+def judge(date):
     date_ = datetime.datetime.strptime(date, '%Y-%m-%d')
     year = date_.year
     file_name = f'{year}Holiday.csv'
