@@ -47,7 +47,7 @@ class WanNianRiLi(object):
             response = s.get(url, headers=headers, params=payload)
             element = etree.HTML(response.text)
             html = element.xpath('//div[@class="wnrl_riqi"]')
-            print('In Working:', year_month)
+            # print('In Working:', year_month)
             for _element in html:
                 # 获取节点属性
                 item = _element.xpath('./a')[0].attrib
@@ -60,7 +60,7 @@ class WanNianRiLi(object):
                         pass
                     _span = _element.xpath('.//text()')
                     result.append({'Date': year_month + '-' + _span[0], 'Holiday': _span[1], 'Tag': tag})
-        print(result)
+        # print(result)
         return result
 
     def exportCSV(self, data):
@@ -74,10 +74,10 @@ class WanNianRiLi(object):
 
 
 # 1-工作日 0-休息日
-def judge(date):
+def judge(date) -> int:
     date_ = datetime.datetime.strptime(date, '%Y-%m-%d')
     year = date_.year
-    file_name = f'{year}Holiday.csv'
+    file_name = f'./xuki/wannianli/{year}Holiday.csv'
     if not os.path.exists(file_name):
         WanNianRiLi(str(year))
     result = pd.read_csv(file_name)

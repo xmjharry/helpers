@@ -19,6 +19,5 @@ _action = args.action
 if _action == 'check' and config.CHECK:
     check(args.type)
 
-
 if _action == 'holiday':
-    rili.judge(args.date)
+    print(rili.judge(args.date))
