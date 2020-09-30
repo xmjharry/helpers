@@ -59,6 +59,7 @@ def four_point_transform(image, pts):
 
     # 计算变换矩阵
     M = cv2.getPerspectiveTransform(rect, dst)
+    cv2.warpAffine()
     warped = cv2.warpPerspective(image, M, (maxWidth, maxHeight))
 
     # 返回变换后结果
@@ -86,7 +87,7 @@ def cv_show(name, img):
 
 # 预处理
 # image = cv2.imread(args["image"])
-image = cv2.imread('example_test.png')
+image = cv2.imread('test_01.png')
 contours_img = image.copy()
 gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 blurred = cv2.GaussianBlur(gray, (5, 5), 0)
