@@ -86,7 +86,7 @@ def cv_show(name, img):
 
 # 预处理
 # image = cv2.imread(args["image"])
-image = cv2.imread('example_test.png')
+image = cv2.imread('test_01.png')
 contours_img = image.copy()
 gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 blurred = cv2.GaussianBlur(gray, (5, 5), 0)
@@ -125,6 +125,7 @@ cv_show('warped', warped)
 thresh = cv2.threshold(warped, 0, 255,
                        cv2.THRESH_BINARY_INV | cv2.THRESH_OTSU)[1]
 cv_show('thresh', thresh)
+print('thresh.shape',thresh.shape)
 thresh_Contours = thresh.copy()
 # 找到每一个圆圈轮廓
 cnts = cv2.findContours(thresh.copy(), cv2.RETR_EXTERNAL,
@@ -166,12 +167,14 @@ for (q, i) in enumerate(np.arange(0, len(questionCnts), 5)):
         cv_show('mask', mask)
         # 通过计算非零点数量来算是否选择这个答案
         mask = cv2.bitwise_and(thresh, thresh, mask=mask)
+        cv_show('mask2', mask)
         total = cv2.countNonZero(mask)
 
         # 通过阈值判断
         if bubbled is None or total > bubbled[0]:
             bubbled = (total, j)
 
+    print('bubbled',bubbled)
     # 对比正确答案
     color = (0, 0, 255)
     k = ANSWER_KEY[q]

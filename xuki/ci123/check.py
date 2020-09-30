@@ -11,6 +11,7 @@ from ..ifttt import ifttt
 import requests
 import os
 from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.events import *
 
 # BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # sys.path.append(BASE_DIR)
@@ -33,39 +34,70 @@ def send_request(_type):
     with requests.session() as session:
         session.headers.update({'User-Agent': USER_AGENT})
         session.post(LOGIN_URL, {'email': EMAIL, 'password': PASSWORD})
-        session.post(CHECK_URL, {'type': CHECK_IN_TYPE if _type == 'in' else CHECK_OUT_TYPE, 'userId': USERID})
-    ifttt.send('check', {'value2': datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-                         'value1': '今天上班打卡时间：' if _type == 'in' else '今天下班打卡时间：'})
+        content = session.post(CHECK_URL,
+                               {'type': CHECK_IN_TYPE if _type == 'in' else CHECK_OUT_TYPE, 'userId': USERID}).text
+        data = content.split('_')[0]
+        # data = 'successGift'
+        # write_log(content)
+        now = datetime.datetime.now()
+        if data.startswith('success'):
+            ifttt.send('check', {'value2': now.strftime('%H:%M:%S'),
+                                 'value1': f'{now.strftime("%m.%d")}上班打卡成功：' if _type == 'in'
+                                 else f'{now.strftime("%m.%d")}下班打卡成功：'})
+        else:
+            ifttt.send('check', {'value2': now.strftime('%H:%M:%S'),
+                                 'value1': f'{now.strftime("%m.%d")}上班打卡失败（{data}）：' if _type == 'in'
+                                 else f'{now.strftime("%m.%d")}下班打卡失败（{data}）：'})
+
+
+def write_log(content):
     with open('log/check_log.txt', 'a+', encoding='utf8') as f:
-        f.write(
-            datetime.datetime.today().strftime('%Y-%m-%d %H:%M:%S') + ('上班打卡成功\n' if _type == 'in' else '下班打卡成功\n'))
+        f.write(content)
+
+
+def scheduler_listener(ev):
+    if ev.exception:
+        write_log('job({id}-{time}) is {exception} error'.
+                  format(id=ev.job_id, time=ev.scheduled_run_time,
+                         exception=ev.exception))
+    else:
+        write_log('job({id}-{time}) is miss'.format(id=ev.job_id, time=ev.scheduled_run_time))
 
 
 def check(_type):
     if is_check():
         if _type == 'in':
-            strat_datetime = datetime.datetime.today().replace(hour=8, minute=50, second=0, microsecond=0).timestamp()
-            end_datetime = datetime.datetime.today().replace(hour=9, minute=15, second=0, microsecond=0).timestamp()
+            check_str = '上班'
+            start_datetime = datetime.datetime.today().replace(hour=9, minute=0, second=0, microsecond=0).timestamp()
+            end_datetime = datetime.datetime.today().replace(hour=9, minute=10, second=0, microsecond=0).timestamp()
         elif _type == 'out':
-            strat_datetime = datetime.datetime.today().replace(hour=19, minute=0, second=0, microsecond=0).timestamp()
+            check_str = '下班'
+            start_datetime = datetime.datetime.today().replace(hour=19, minute=0, second=0, microsecond=0).timestamp()
             end_datetime = datetime.datetime.today().replace(hour=20, minute=30, second=0, microsecond=0).timestamp()
         else:
             raise ValueError('Type is error')
-        run_date = datetime.datetime.fromtimestamp(random.randrange(strat_datetime, end_datetime))
-        # run_date = datetime.datetime.now() + datetime.timedelta(seconds=1)
+        run_date = datetime.datetime.fromtimestamp(random.randrange(start_datetime, end_datetime))
+        # run_date = datetime.datetime.now() + datetime.timedelta(seconds=3)
+        ifttt.send('check', {'value2': run_date.strftime('%H:%M:%S'),
+                             'value1': f"{run_date.strftime('%m.%d')}预计{check_str}打卡时间："})
         scheduler = BackgroundScheduler()
+        scheduler.add_listener(scheduler_listener, EVENT_JOB_ERROR | EVENT_JOB_MISSED)
         scheduler.add_job(send_request, 'date', run_date=run_date, args=(_type,),
-                          id=f"{run_date.strftime('%Y-%m-%d %H:%M:%S')}-{_type}")
+                          id=f"{run_date.strftime('%Y-%m-%d_%H:%M:%S')}-{_type}")
         scheduler.start()
         try:
             while len(scheduler.get_jobs()) > 0:
                 time.sleep(2)
         except(KeyboardInterrupt, SystemExit):
             scheduler.shutdown()
-            print('Exit the job!')
+            write_log('Exit the job!')
+    else:
+        pass
 
 
 def is_check():
-    result = requests.get('http://stock.luckyxuki.cn:9000/is_check').text
+    result = requests.get('http://stock.luckyxuki.cn:9000/is_check', timeout=None).text
+    write_log(f"{datetime.datetime.today().strftime('%Y-%m-%d')}打卡检测={result}\n")
     return True if int(result) == 1 else False
+
 
