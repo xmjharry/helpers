@@ -9,7 +9,10 @@ import requests
 def send(event_name, values):
     key = 'd52n-XLnjmsFF9fZ6AX6sB'
     url = f'https://maker.ifttt.com/trigger/{event_name}/with/key/{key}'
-    ret = requests.post(url, json=values).text
+    try:
+        ret = requests.post(url, json=values).text
+    except requests.exceptions.SSLError:
+        pass
 
 
 if __name__ == '__main__':
