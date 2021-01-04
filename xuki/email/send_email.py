@@ -17,9 +17,9 @@ s.login(msg_from, passwd)
 def send(tos, subject, content):
     msg = MIMEText(content, 'plain', 'utf-8')
     msg['Subject'] = subject
-    msg['From'] = formataddr(["Father", msg_from])  # 括号里的对应发件人邮箱昵称、发件人邮箱账号
+    msg['From'] = formataddr(("Father", msg_from))  # 括号里的对应发件人邮箱昵称、发件人邮箱账号
     for to in tos:
-        msg['To'] = formataddr(["Son", to])  # 括号里的对应收件人邮箱昵称、收件人邮箱账号
+        msg['To'] = formataddr(("Son", to))  # 括号里的对应收件人邮箱昵称、收件人邮箱账号
         try:
             s.sendmail(msg_from, to, msg.as_string())
         except smtplib.SMTPException:

@@ -12,6 +12,9 @@ import smtplib
 from email.mime.text import MIMEText
 
 
+pd.DataFrame.drop()
+
+
 def cv_show(name, img):
     cv2.imshow(name, img)
     cv2.waitKey(0)

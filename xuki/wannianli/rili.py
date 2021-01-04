@@ -20,12 +20,11 @@ class WanNianRiLi(object):
     def __init__(self, year):
         self.year = year
         data = self.parseHTML()
-        self.exportCSV(data)
+        if data:
+            self.exportCSV(data)
 
     def parseHTML(self):
         """页面解析"""
-        url = 'https://wannianrili.51240.com/ajax/'
-        s = requests.session()
         headers = {
             'Host': 'wannianrili.51240.com',
             'Connection': 'keep-alive',
@@ -45,7 +44,10 @@ class WanNianRiLi(object):
             s = requests.session()
             url = 'https://wannianrili.51240.com/ajax/'
             payload = {'q': year_month}
-            response = s.get(url, headers=headers, params=payload)
+            try:
+                response = s.get(url, headers=headers, params=payload)
+            except requests.exceptions.TooManyRedirects:
+                return None
             element = etree.HTML(response.text)
             html = element.xpath('//div[@class="wnrl_riqi"]')
             # print('In Working:', year_month)
@@ -82,24 +84,24 @@ def judge(date) -> int:
     file_name = f'./xuki/wannianli/{year}Holiday.csv'
     if not os.path.exists(file_name):
         WanNianRiLi(str(year))
-    result = pd.read_csv(file_name)
-    ret = result[result['Date'] == date]
-    if len(ret):
-        tag = ret.Tag.values[0]
-        if tag == '休假':
-            return 0
-        elif tag == '补班':
-            return 1
-        else:
-            return 1
+    if os.path.exists(file_name):
+        result = pd.read_csv(file_name)
+        ret = result[result['Date'] == date]
+        if len(ret):
+            tag = ret.Tag.values[0]
+            if tag == '休假':
+                return 0
+            elif tag == '补班':
+                return 1
+            else:
+                return 1
+    day_in_week = date_.isoweekday()
+    if day_in_week <= 5:
+        return 1
     else:
-        day_in_week = date_.isoweekday()
-        if day_in_week <= 5:
-            return 1
-        else:
-            return 0
+        return 0
 
 
 if __name__ == '__main__':
-    ret = judge('2020-10-10')
+    ret = judge('2021-01-09')
     print(ret)
