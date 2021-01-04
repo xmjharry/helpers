@@ -12,6 +12,7 @@ from lxml import etree
 
 file_name = None
 
+
 class WanNianRiLi(object):
     """万年日历接口数据抓取
     Params:year 四位数年份字符串
@@ -24,30 +25,13 @@ class WanNianRiLi(object):
             self.exportCSV(data)
 
     def parseHTML(self):
-        """页面解析"""
-        headers = {
-            'Host': 'wannianrili.51240.com',
-            'Connection': 'keep-alive',
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.138 Safari/537.36',
-            'Accept': '*/*',
-            'Sec-Fetch-Site': 'same-origin',
-            'Sec-Fetch-Mode': 'cors',
-            'Sec-Fetch-Dest': 'empty',
-            'Referer': 'https://wannianrili.51240.com/',
-            'Accept-Encoding': 'gzip, deflate, br',
-            'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
-        }
         result = []
         # 生成月份列表
         dateList = [self.year + '-' + '%02d' % i for i in range(1, 13)]
         for year_month in dateList:
-            s = requests.session()
             url = 'https://wannianrili.51240.com/ajax/'
             payload = {'q': year_month}
-            try:
-                response = s.get(url, headers=headers, params=payload)
-            except requests.exceptions.TooManyRedirects:
-                return None
+            response = requests.get(url, params=payload)
             element = etree.HTML(response.text)
             html = element.xpath('//div[@class="wnrl_riqi"]')
             # print('In Working:', year_month)
