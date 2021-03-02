@@ -8,6 +8,8 @@ from xuki.ci123.check import check
 from xuki.wannianli import rili
 from xuki import config
 import datetime
+import json
+
 
 parser = argparse.ArgumentParser()
 parser.add_argument('action', help='具体的操作')
