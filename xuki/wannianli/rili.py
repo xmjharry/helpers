@@ -45,7 +45,7 @@ class WanNianRiLi(object):
                     elif item['class'] == 'wnrl_riqi_ban':
                         tag = '补班'
                     else:
-                        tag = '节假日'
+                        continue
                     _span = _element.xpath('.//text()')
                     result.append({'Date': year_month + '-' + _span[0], 'Holiday': _span[1], 'Tag': tag})
         # print(result)
