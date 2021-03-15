@@ -52,7 +52,7 @@ def send_request(_type):
 
 def write_log(content):
     with open('log/check_log.txt', 'a+', encoding='utf8') as f:
-        f.write(content)
+        f.write(content + '\n')
 
 
 def scheduler_listener(ev):
@@ -65,6 +65,7 @@ def scheduler_listener(ev):
 
 
 def check(_type):
+    write_log(datetime.datetime.today().strftime('%Y-%m-%d_%H:%M:%S') + ' 执行打卡操作')
     if is_check():
         if _type == 'in':
             check_str = '上班'
@@ -97,7 +98,5 @@ def check(_type):
 
 def is_check():
     result = requests.get('http://stock.luckyxuki.cn:9000/is_check', timeout=None).text
-    write_log(f"{datetime.datetime.today().strftime('%Y-%m-%d')}打卡检测={result}\n")
+    write_log(f"{datetime.datetime.today().strftime('%Y-%m-%d')}打卡检测={result}")
     return True if int(result) == 1 else False
-
-

@@ -29,8 +29,9 @@ class WanNianRiLi(object):
         # 生成月份列表
         dateList = [self.year + '-' + '%02d' % i for i in range(1, 13)]
         for year_month in dateList:
-            url = 'https://wannianrili.51240.com/ajax/'
+            url = 'https://wannianrili.bmcx.com/ajax/'
             payload = {'q': year_month}
+
             response = requests.get(url, params=payload)
             element = etree.HTML(response.text)
             html = element.xpath('//div[@class="wnrl_riqi"]')
@@ -44,7 +45,7 @@ class WanNianRiLi(object):
                     elif item['class'] == 'wnrl_riqi_ban':
                         tag = '补班'
                     else:
-                        pass
+                        tag = '节假日'
                     _span = _element.xpath('.//text()')
                     result.append({'Date': year_month + '-' + _span[0], 'Holiday': _span[1], 'Tag': tag})
         # print(result)
@@ -78,7 +79,7 @@ def judge(date) -> int:
             elif tag == '补班':
                 return 1
             else:
-                return 1
+                return 0
     day_in_week = date_.isoweekday()
     if day_in_week <= 5:
         return 1
@@ -87,5 +88,5 @@ def judge(date) -> int:
 
 
 if __name__ == '__main__':
-    ret = judge('2021-01-09')
+    ret = judge('2021-03-13')
     print(ret)
