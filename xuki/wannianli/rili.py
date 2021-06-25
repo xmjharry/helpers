@@ -9,6 +9,7 @@ import os
 import pandas as pd
 import requests
 from lxml import etree
+from ..ci123 import check
 
 file_name = None
 
@@ -47,7 +48,15 @@ class WanNianRiLi(object):
                     else:
                         continue
                     _span = _element.xpath('.//text()')
-                    result.append({'Date': year_month + '-' + _span[0], 'Holiday': _span[1], 'Tag': tag})
+                    date = year_month + '-' + _span[0]
+                    result.append({'Date': date, 'Holiday': _span[1], 'Tag': tag})
+                   
+                    status = 0
+                    if tag == '休假':
+                        status = 0
+                    elif tag == '补班':
+                        status = 1
+                    check.inser(date,status)
         # print(result)
         return result
 
@@ -87,6 +96,20 @@ def judge(date) -> int:
         return 0
 
 
+def saveToSql():
+    with open('./xuki/wannianli/2021Holiday.csv',encoding='utf8') as csvfile:
+        reader = csv.DictReader(csvfile)
+        for row in reader:
+            status = 0
+            tag = row['Tag']
+            if tag == '休假':
+                status = 0
+            elif tag == '补班':
+                status = 1
+            check.inser(row['Date'],status)
+
+
 if __name__ == '__main__':
     ret = judge('2021-03-13')
     print(ret)
+    

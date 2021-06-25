@@ -12,6 +12,10 @@ import requests
 import os
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.events import *
+from sqlalchemy import create_engine
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy import Column, String, Integer, Date, DECIMAL
+from sqlalchemy.orm import sessionmaker
 
 # BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # sys.path.append(BASE_DIR)
@@ -29,6 +33,29 @@ CHECK_URL = 'http://oa.corp-ci.com/oa.php/Punch/newPunch'
 CHECK_IN_TYPE = 'one'
 CHECK_OUT_TYPE = 'four'
 
+engine = create_engine('mysql+pymysql://root:Xuki574325507@47.99.67.174:3306/stock?charset=utf8')
+Base = declarative_base()
+
+
+class Check(Base):
+    """每日指标"""
+    __tablename__ = 'check'
+
+    id = Column(Integer, primary_key=True)
+    day = Column(Date, nullable=False, index=True)
+    status = Column(Integer)
+
+    def __repr__(self):
+        return '%s(%s,%s)' % (self.__class__.__name__, self.day, self.status)
+
+
+Base.metadata.create_all(engine)
+Session = sessionmaker(bind=engine)
+session = Session()
+
+def inser(date,status):
+    session.add(Check(**{'day':date,'status':status}))
+    session.commit()
 
 def send_request(_type):
     with requests.session() as session:
@@ -67,14 +94,16 @@ def scheduler_listener(ev):
 def check(_type):
     write_log(datetime.datetime.today().strftime('%Y-%m-%d_%H:%M:%S') + ' 执行打卡操作')
     if is_check():
+        print('qwerty---1111')
+        exit(0)
         if _type == 'in':
             check_str = '上班'
-            start_datetime = datetime.datetime.today().replace(hour=9, minute=0, second=0, microsecond=0).timestamp()
-            end_datetime = datetime.datetime.today().replace(hour=9, minute=10, second=0, microsecond=0).timestamp()
+            start_datetime = datetime.datetime.today().replace(hour=9, minute=10, second=0, microsecond=0).timestamp()
+            end_datetime = datetime.datetime.today().replace(hour=9, minute=15, second=0, microsecond=0).timestamp()
         elif _type == 'out':
             check_str = '下班'
             start_datetime = datetime.datetime.today().replace(hour=19, minute=0, second=0, microsecond=0).timestamp()
-            end_datetime = datetime.datetime.today().replace(hour=20, minute=30, second=0, microsecond=0).timestamp()
+            end_datetime = datetime.datetime.today().replace(hour=20, minute=0, second=0, microsecond=0).timestamp()
         else:
             raise ValueError('Type is error')
         run_date = datetime.datetime.fromtimestamp(random.randrange(start_datetime, end_datetime))
@@ -95,8 +124,21 @@ def check(_type):
     else:
         pass
 
-
 def is_check():
-    result = requests.get('http://stock.luckyxuki.cn:9000/is_check', timeout=None).text
-    write_log(f"{datetime.datetime.today().strftime('%Y-%m-%d')}打卡检测={result}")
-    return True if int(result) == 1 else False
+    now = datetime.datetime.now()
+    item = session.query(Check.status).filter(Check.day == now.strftime('%Y-%m-%d')).first()
+    status = 0
+    if item:
+        status = item.status
+    else:
+        day_in_week = now.isoweekday()
+        if day_in_week <= 5:
+            status = 1
+        else:
+            status = 0
+    return status
+        # result = requests.get('http://stock.luckyxuki.cn:9000/is_check', timeout=None).text
+        # write_log(f"{datetime.datetime.today().strftime('%Y-%m-%d')}打卡检测={result}")
+        # return True if int(result) == 1 else False
+
+

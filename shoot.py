@@ -22,4 +22,4 @@ if _action == 'check' and config.CHECK:
     check(args.type)
 
 if _action == 'holiday':
-    print(rili.judge(args.date))
+    rili.WanNianRiLi().parseHTML()
