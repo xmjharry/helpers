@@ -58,23 +58,30 @@ def inser(date,status):
     session.commit()
 
 def send_request(_type):
-    with requests.session() as session:
-        session.headers.update({'User-Agent': USER_AGENT})
-        session.post(LOGIN_URL, {'email': EMAIL, 'password': PASSWORD})
-        content = session.post(CHECK_URL,
-                               {'type': CHECK_IN_TYPE if _type == 'in' else CHECK_OUT_TYPE, 'userId': USERID}).text
-        data = content.split('_')[0]
-        # data = 'successGift'
-        # write_log(content)
+    if is_check():
+        with requests.session() as session:
+            session.headers.update({'User-Agent': USER_AGENT})
+            session.post(LOGIN_URL, {'email': EMAIL, 'password': PASSWORD})
+            content = session.post(CHECK_URL,
+                                   {'type': CHECK_IN_TYPE if _type == 'in' else CHECK_OUT_TYPE, 'userId': USERID}).text
+            data = content.split('_')[0]
+            # data = 'successGift'
+            # write_log(content)
+            now = datetime.datetime.now()
+            if data.startswith('success'):
+                ifttt.send('check', {'value2': now.strftime('%H:%M:%S'),
+                                     'value1': f'{now.strftime("%m.%d")}上班打卡成功：' if _type == 'in'
+                                     else f'{now.strftime("%m.%d")}下班打卡成功：'})
+            else:
+                ifttt.send('check', {'value2': now.strftime('%H:%M:%S'),
+                                     'value1': f'{now.strftime("%m.%d")}上班打卡失败（{data}）：' if _type == 'in'
+                                     else f'{now.strftime("%m.%d")}下班打卡失败（{data}）：'})
+    else:
         now = datetime.datetime.now()
-        if data.startswith('success'):
-            ifttt.send('check', {'value2': now.strftime('%H:%M:%S'),
-                                 'value1': f'{now.strftime("%m.%d")}上班打卡成功：' if _type == 'in'
-                                 else f'{now.strftime("%m.%d")}下班打卡成功：'})
-        else:
-            ifttt.send('check', {'value2': now.strftime('%H:%M:%S'),
-                                 'value1': f'{now.strftime("%m.%d")}上班打卡失败（{data}）：' if _type == 'in'
-                                 else f'{now.strftime("%m.%d")}下班打卡失败（{data}）：'})
+        ifttt.send('check', {'value2': now.strftime('%H:%M:%S'),
+                                     'value1': f'{now.strftime("%m.%d")}上班打卡取消成功：' if _type == 'in'
+                                     else f'{now.strftime("%m.%d")}下班打卡取消成功：'})
+
 
 
 def write_log(content):
@@ -92,37 +99,31 @@ def scheduler_listener(ev):
 
 
 def check(_type):
-    write_log(datetime.datetime.today().strftime('%Y-%m-%d_%H:%M:%S') + ' 执行打卡操作')
-    if is_check():
-        print('qwerty---1111')
-        exit(0)
-        if _type == 'in':
-            check_str = '上班'
-            start_datetime = datetime.datetime.today().replace(hour=9, minute=10, second=0, microsecond=0).timestamp()
-            end_datetime = datetime.datetime.today().replace(hour=9, minute=15, second=0, microsecond=0).timestamp()
-        elif _type == 'out':
-            check_str = '下班'
-            start_datetime = datetime.datetime.today().replace(hour=19, minute=0, second=0, microsecond=0).timestamp()
-            end_datetime = datetime.datetime.today().replace(hour=20, minute=0, second=0, microsecond=0).timestamp()
-        else:
-            raise ValueError('Type is error')
-        run_date = datetime.datetime.fromtimestamp(random.randrange(start_datetime, end_datetime))
-        # run_date = datetime.datetime.now() + datetime.timedelta(seconds=3)
-        ifttt.send('check', {'value2': run_date.strftime('%H:%M:%S'),
-                             'value1': f"{run_date.strftime('%m.%d')}预计{check_str}打卡时间："})
-        scheduler = BackgroundScheduler()
-        scheduler.add_listener(scheduler_listener, EVENT_JOB_ERROR | EVENT_JOB_MISSED)
-        scheduler.add_job(send_request, 'date', run_date=run_date, args=(_type,),
-                          id=f"{run_date.strftime('%Y-%m-%d_%H:%M:%S')}-{_type}")
-        scheduler.start()
-        try:
-            while len(scheduler.get_jobs()) > 0:
-                time.sleep(2)
-        except(KeyboardInterrupt, SystemExit):
-            scheduler.shutdown()
-            write_log('Exit the job!')
+    if _type == 'in':
+        check_str = '上班'
+        start_datetime = datetime.datetime.today().replace(hour=9, minute=10, second=0, microsecond=0).timestamp()
+        end_datetime = datetime.datetime.today().replace(hour=9, minute=15, second=0, microsecond=0).timestamp()
+    elif _type == 'out':
+        check_str = '下班'
+        start_datetime = datetime.datetime.today().replace(hour=19, minute=0, second=0, microsecond=0).timestamp()
+        end_datetime = datetime.datetime.today().replace(hour=20, minute=0, second=0, microsecond=0).timestamp()
     else:
-        pass
+        raise ValueError('Type is error')
+    run_date = datetime.datetime.fromtimestamp(random.randrange(start_datetime, end_datetime))
+    # run_date = datetime.datetime.now() + datetime.timedelta(seconds=10)
+    ifttt.send('check', {'value2': run_date.strftime('%H:%M:%S'),
+                         'value1': f"{run_date.strftime('%m.%d')}预计{check_str}打卡时间："})
+    scheduler = BackgroundScheduler()
+    # scheduler.add_listener(scheduler_listener, EVENT_JOB_ERROR | EVENT_JOB_MISSED)
+    scheduler.add_job(send_request, 'date', run_date=run_date, args=(_type,),
+                      id=f"{run_date.strftime('%Y-%m-%d_%H:%M:%S')}-{_type}")
+    scheduler.start()
+    try:
+        while len(scheduler.get_jobs()) > 0:
+            time.sleep(2)
+    except(KeyboardInterrupt, SystemExit):
+        scheduler.shutdown()
+        # write_log('Exit the job!')
 
 def is_check():
     now = datetime.datetime.now()
